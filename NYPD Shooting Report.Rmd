@@ -8,6 +8,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(naniar)
+# here is a test change for the markdown file
 ```
 
 ## Data Import
@@ -39,13 +40,11 @@ nypd <- nypd_raw |>
         Vic_race = VIC_RACE,
         Vic_sex = VIC_SEX,
         )
-
 ```
 
 ## Refactoring
-### Refactoring column type based off the footnotes of the dataset from www.data.cityofnewyork.us 
+### Refactoring column type based off the dataset footnotes 
 ```{r refactoring}
-website
 nypd$Key <- as.integer(nypd$Key)
 nypd$Date <- as.Date(nypd$Date, "%m/%d/%Y")
 # OCCUR_TIME is already is already hr/min/sec
@@ -54,20 +53,20 @@ nypd$Inside_outside <- as.factor(nypd$Inside_outside)
 nypd$Precinct <- as.integer(nypd$Precinct)
 nypd$Jurisdiction <- as.integer(nypd$Jurisdiction)
 nypd$Location <- as.factor(nypd$Location)
-
 ```
 
 ## Cleaning perp and victim demographics
 ### This next section cleans the age, sex, and race columns using the naniar library, specifically the `replace_with_na` function.
-
+#### Finding perp demo outliers
 ```{r perp demo outliers}
-# Using the `unique()` command  to find each deomgraphic that don't fit into the established convention
+# Using the `unique()` command  to find each demegraphic that doesn't fit into the established convention
 unique(nypd$Perp_age)
 unique(nypd$Perp_sex)
 unique(nypd$Perp_race)
 ```
+#### Replacing outlier values with NA
 ```{r clean perp demo}
-# entries in each column that don't match convention. Unkowns are changed to NA for uniformity across the data set
+# entries in each column that don't match convention. Unknowns are changed to NA for uniformity across the data set
 perp_age_filter <- c("(null)", "2021", "1028", "UNKNOWN", "1020", "940", "224")
 perp_sex_filter <- c("(null)", "U")
 perp_race_filter <- c("(null)", "UNKNOWN")
@@ -78,16 +77,17 @@ nypd <- nypd |>
                                    Perp_sex = perp_sex_filter,
                                    Perp_race = perp_race_filter)) 
 ```
-
-
+#### Finding vic demo outliers
 ```{r vic demo outliers}
 # the same process as above is done for the victims
 unique(nypd$Vic_age)
 unique(nypd$Vic_sex)
 unique(nypd$Vic_race)
 ```
+#### Replacing vic demo outlier values with NA
 ```{r clean vic demo}
-# entries in each column that don't match convention. Unkowns are changed to NA for uniformity across the data set
+# creating a list of strings from each column that doesn't match convention
+# unknowns are changed to NA for uniformity across the data set
 vic_age_filter <- c("UNKNOWN", "1022")
 vic_sex_filter <- c("U")
 vic_race_filter <- c("UNKNOWN")
