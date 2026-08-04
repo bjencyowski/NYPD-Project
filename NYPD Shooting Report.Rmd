@@ -8,6 +8,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(naniar)
+library(ggsankey)
 # here is a test change for the markdown file
 ```
 
@@ -27,9 +28,7 @@ nypd <- nypd_raw |>
         Date = OCCUR_DATE,
         Time = OCCUR_TIME,
         Boro = BORO,
-        Inside_outside = LOC_OF_OCCUR_DESC,
         Precinct = PRECINCT,
-        Jurisdiction = JURISDICTION_CODE,
         Location = LOC_CLASSFCTN_DESC,
         Location_description = LOCATION_DESC,
         Murder = STATISTICAL_MURDER_FLAG,
@@ -49,14 +48,14 @@ nypd$Key <- as.integer(nypd$Key)
 nypd$Date <- as.Date(nypd$Date, "%m/%d/%Y")
 # OCCUR_TIME is already is already hr/min/sec
 nypd$Boro <- as.factor(nypd$Boro)
-nypd$Inside_outside <- as.factor(nypd$Inside_outside)
 nypd$Precinct <- as.integer(nypd$Precinct)
-nypd$Jurisdiction <- as.integer(nypd$Jurisdiction)
 nypd$Location <- as.factor(nypd$Location)
+nypd$Location_description <- as.factor(nypd$Location_description)
 ```
 
 ## Cleaning perp and victim demographics
 ### This next section cleans the age, sex, and race columns using the naniar library, specifically the `replace_with_na` function.
+
 #### Finding perp demo outliers
 ```{r perp demo outliers}
 # Using the `unique()` command  to find each demegraphic that doesn't fit into the established convention
@@ -64,7 +63,8 @@ unique(nypd$Perp_age)
 unique(nypd$Perp_sex)
 unique(nypd$Perp_race)
 ```
-#### Replacing outlier values with NA
+
+#### Replacing perp demo outlier values with NA
 ```{r clean perp demo}
 # entries in each column that don't match convention. Unknowns are changed to NA for uniformity across the data set
 perp_age_filter <- c("(null)", "2021", "1028", "UNKNOWN", "1020", "940", "224")
@@ -77,6 +77,7 @@ nypd <- nypd |>
                                    Perp_sex = perp_sex_filter,
                                    Perp_race = perp_race_filter)) 
 ```
+
 #### Finding vic demo outliers
 ```{r vic demo outliers}
 # the same process as above is done for the victims
@@ -84,6 +85,7 @@ unique(nypd$Vic_age)
 unique(nypd$Vic_sex)
 unique(nypd$Vic_race)
 ```
+
 #### Replacing vic demo outlier values with NA
 ```{r clean vic demo}
 # creating a list of strings from each column that doesn't match convention
@@ -97,4 +99,31 @@ nypd <- nypd |>
     replace_with_na(replace = list(Vic_age = vic_age_filter,
                                    Vic_sex = vic_sex_filter,
                                    Vic_race = vic_race_filter)) 
+```
+
+#### Mutating age demos to ordered factors
+```{r}
+nypd <- nypd |> 
+    mutate(Perp_age = factor(Perp_age, levels = c("<18", "18-24", "25-44", "45-64", "65+")),
+          Vic_age = factor(Vic_age, levels = c("<18", "18-24", "25-44", "45-64", "65+"))
+    )
+```
+
+
+```{r}
+race <-  nypd |>
+    select(Key, Date, Boro, Perp_race, Vic_race) |> 
+    mutate(Vic_race_ord = fct_infreq(Vic_race))
+```
+
+## Vic Race stacked bar plot
+```{r stacked bar plot}
+ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
+    geom_bar(position = "dodge")
+```
+
+
+```{r basic line plot}
+ggplot(race, aes(x = Date, y = Total)) +
+    geom_line()
 ```
