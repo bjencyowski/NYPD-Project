@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.38">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -13,10 +13,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -69,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="NYPD Shooting Report_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="NYPD Shooting Report_files/libs/quarto-html/anchor.min.js"></script>
 <link href="NYPD Shooting Report_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="NYPD Shooting Report_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="NYPD Shooting Report_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="NYPD Shooting Report_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="NYPD Shooting Report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="NYPD Shooting Report_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="NYPD Shooting Report_files/libs/bootstrap/bootstrap-215b371544c282197b31c8aa00ce3677.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
@@ -108,169 +111,277 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="data-import" class="level2">
-<h2 class="anchored" data-anchor-id="data-import">Data Import</h2>
+<section id="data-import" class="level1">
+<h1>Data Import</h1>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NYPD Shooting Incident Data (Historic) from www.catalog.data.gov</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>nypd_url <span class="ot">&lt;-</span> <span class="st">"https://data.cityofnewyork.us/api/v3/views/833y-fsy8/export.csv?accessType=DOWNLOAD"</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nypd_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(nypd_url)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 29744 Columns: 21
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (12): OCCUR_DATE, BORO, LOC_OF_OCCUR_DESC, LOC_CLASSFCTN_DESC, LOCATION...
-dbl   (5): INCIDENT_KEY, PRECINCT, JURISDICTION_CODE, Latitude, Longitude
-num   (2): X_COORD_CD, Y_COORD_CD
-lgl   (1): STATISTICAL_MURDER_FLAG
-time  (1): OCCUR_TIME
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
 </div>
 </section>
-<section id="renaming" class="level2">
-<h2 class="anchored" data-anchor-id="renaming">Renaming</h2>
-<section id="renaming-each-column-for-clarity-and-ease-of-reading" class="level3">
-<h3 class="anchored" data-anchor-id="renaming-each-column-for-clarity-and-ease-of-reading">Renaming each column for clarity and ease of reading</h3>
+<section id="tidying" class="level1">
+<h1>Tidying</h1>
+<section id="renaming-columns-for-clarity" class="level3">
+<h3 class="anchored" data-anchor-id="renaming-columns-for-clarity">Renaming columns for clarity</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nypd <span class="ot">&lt;-</span> nypd_raw <span class="sc">|&gt;</span> </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">Key =</span> INCIDENT_KEY,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">Date =</span> OCCUR_DATE,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">Time =</span> OCCUR_TIME,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">Boro =</span> BORO,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">Inside_outside =</span> LOC_OF_OCCUR_DESC,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">Precinct =</span> PRECINCT,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">Jurisdiction =</span> JURISDICTION_CODE,</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">Location =</span> LOC_CLASSFCTN_DESC,</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">Location_description =</span> LOCATION_DESC,</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">Murder =</span> STATISTICAL_MURDER_FLAG,</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">Perp_age =</span> PERP_AGE_GROUP,</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">Perp_sex =</span> PERP_SEX,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">Perp_race =</span> PERP_RACE,</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">Vic_age =</span> VIC_AGE_GROUP,</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">Vic_race =</span> VIC_RACE,</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">Vic_sex =</span> VIC_SEX,</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>nypd <span class="ot">&lt;-</span> nypd_raw <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">Key =</span> INCIDENT_KEY,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">Date =</span> OCCUR_DATE,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">Time =</span> OCCUR_TIME,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">Boro =</span> BORO,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">Vic_race =</span> VIC_RACE,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-</section>
-<section id="refactoring" class="level2">
-<h2 class="anchored" data-anchor-id="refactoring">Refactoring</h2>
-<section id="refactoring-column-type-based-off-the-dataset-footnotes" class="level3">
-<h3 class="anchored" data-anchor-id="refactoring-column-type-based-off-the-dataset-footnotes">Refactoring column type based off the dataset footnotes</h3>
+<section id="refactoring-using-the-dataset-footnotes" class="level3">
+<h3 class="anchored" data-anchor-id="refactoring-using-the-dataset-footnotes">Refactoring using the dataset footnotes</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Key <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(nypd<span class="sc">$</span>Key)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(nypd<span class="sc">$</span>Date, <span class="st">"%m/%d/%Y"</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># OCCUR_TIME is already is already hr/min/sec</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Boro <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(nypd<span class="sc">$</span>Boro)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Inside_outside <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(nypd<span class="sc">$</span>Inside_outside)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Precinct <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(nypd<span class="sc">$</span>Precinct)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Jurisdiction <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(nypd<span class="sc">$</span>Jurisdiction)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Location <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(nypd<span class="sc">$</span>Location)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Key <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(nypd<span class="sc">$</span>Key)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(nypd<span class="sc">$</span>Date, <span class="st">"%m/%d/%Y"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># TIME is already factored as hr/min/sec</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>nypd<span class="sc">$</span>Boro <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(nypd<span class="sc">$</span>Boro)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
+<section id="cleaning-victim-demographics" class="level3">
+<h3 class="anchored" data-anchor-id="cleaning-victim-demographics">Cleaning victim demographics</h3>
+<section id="this-next-section-cleans-the-race-columns-using-the-naniar-library-specifically-the-replace_with_na-function." class="level5">
+<h5 class="anchored" data-anchor-id="this-next-section-cleans-the-race-columns-using-the-naniar-library-specifically-the-replace_with_na-function.">This next section cleans the race columns using the naniar library, specifically the <code>replace_with_na</code> function.</h5>
 </section>
-<section id="cleaning-perp-and-victim-demographics" class="level2">
-<h2 class="anchored" data-anchor-id="cleaning-perp-and-victim-demographics">Cleaning perp and victim demographics</h2>
-<section id="this-next-section-cleans-the-age-sex-and-race-columns-using-the-naniar-library-specifically-the-replace_with_na-function." class="level3">
-<h3 class="anchored" data-anchor-id="this-next-section-cleans-the-age-sex-and-race-columns-using-the-naniar-library-specifically-the-replace_with_na-function.">This next section cleans the age, sex, and race columns using the naniar library, specifically the <code>replace_with_na</code> function.</h3>
-<section id="finding-perp-demo-outliers" class="level4">
-<h4 class="anchored" data-anchor-id="finding-perp-demo-outliers">Finding perp demo outliers</h4>
+<section id="finding-victim-race-outliers" class="level4">
+<h4 class="anchored" data-anchor-id="finding-victim-race-outliers">Finding Victim race outliers</h4>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Using the `unique()` command  to find each demegraphic that doesn't fit into the established convention</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Perp_age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Vic_race)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1] "25-44"   "(null)"  "45-64"   "18-24"   "&lt;18"     "65+"     "2021"   
- [8] "1028"    NA        "UNKNOWN" "1020"    "940"     "224"    </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Perp_sex)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "M"      "(null)" "F"      "U"      NA      </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Perp_race)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "BLACK"                          "(null)"                        
-[3] "BLACK HISPANIC"                 "WHITE HISPANIC"                
-[5] "ASIAN / PACIFIC ISLANDER"       "UNKNOWN"                       
-[7] "WHITE"                          NA                              
-[9] "AMERICAN INDIAN/ALASKAN NATIVE"</code></pre>
-</div>
-</div>
-</section>
-<section id="replacing-outlier-values-with-na" class="level4">
-<h4 class="anchored" data-anchor-id="replacing-outlier-values-with-na">Replacing outlier values with NA</h4>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># entries in each column that don't match convention. Unknowns are changed to NA for uniformity across the data set</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>perp_age_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"(null)"</span>, <span class="st">"2021"</span>, <span class="st">"1028"</span>, <span class="st">"UNKNOWN"</span>, <span class="st">"1020"</span>, <span class="st">"940"</span>, <span class="st">"224"</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>perp_sex_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"(null)"</span>, <span class="st">"U"</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>perp_race_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"(null)"</span>, <span class="st">"UNKNOWN"</span>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># replacing those values with NA</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>nypd <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">replace_with_na</span>(<span class="at">replace =</span> <span class="fu">list</span>(<span class="at">Perp_age =</span> perp_age_filter,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Perp_sex =</span> perp_sex_filter,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Perp_race =</span> perp_race_filter)) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section>
-<section id="finding-vic-demo-outliers" class="level4">
-<h4 class="anchored" data-anchor-id="finding-vic-demo-outliers">Finding vic demo outliers</h4>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the same process as above is done for the victims</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Vic_age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "25-44"   "18-24"   "&lt;18"     "45-64"   "65+"     "UNKNOWN" "1022"   </code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Vic_sex)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "M" "F" "U"</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(nypd<span class="sc">$</span>Vic_race)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "BLACK"                          "WHITE HISPANIC"                
-[3] "WHITE"                          "BLACK HISPANIC"                
+<pre><code>[1] "BLACK"                          "WHITE"                         
+[3] "WHITE HISPANIC"                 "BLACK HISPANIC"                
 [5] "ASIAN / PACIFIC ISLANDER"       "UNKNOWN"                       
 [7] "AMERICAN INDIAN/ALASKAN NATIVE"</code></pre>
 </div>
 </div>
 </section>
-<section id="replacing-vic-demo-outlier-values-with-na" class="level4">
-<h4 class="anchored" data-anchor-id="replacing-vic-demo-outlier-values-with-na">Replacing vic demo outlier values with NA</h4>
+<section id="replacing-victim-race-outlier-values-with-na" class="level4">
+<h4 class="anchored" data-anchor-id="replacing-victim-race-outlier-values-with-na">Replacing Victim race outlier values with NA</h4>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># creating a list of strings from each column that doesn't match convention</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># unknowns are changed to NA for uniformity across the data set</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>vic_age_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"UNKNOWN"</span>, <span class="st">"1022"</span>)</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>vic_sex_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"U"</span>)</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>vic_race_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"UNKNOWN"</span>)</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># replacing those values with NA</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>nypd <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">replace_with_na</span>(<span class="at">replace =</span> <span class="fu">list</span>(<span class="at">Vic_age =</span> vic_age_filter,</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Vic_sex =</span> vic_sex_filter,</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Vic_race =</span> vic_race_filter)) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># creating a string for races that don't match convention</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># unknowns are changed to NA for uniformity across the data set</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>vic_race_filter <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"UNKNOWN"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># replacing those "UNKNOWN"s with NA</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>nypd <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">replace_with_na</span>(<span class="at">replace =</span> <span class="fu">list</span>(<span class="at">Vic_race =</span> vic_race_filter)) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
 </section>
-<section id="cleaning-the-locations-and-location-descriptions." class="level2">
-<h2 class="anchored" data-anchor-id="cleaning-the-locations-and-location-descriptions.">Cleaning the locations and location descriptions.</h2>
-<section id="the-data-for-location-is-broken-into-two-categories-location-and-location-description-with-the-first-serving-as-a-broader-categorization-of-location-while-the-latter-being-more-descriptive." class="level3">
-<h3 class="anchored" data-anchor-id="the-data-for-location-is-broken-into-two-categories-location-and-location-description-with-the-first-serving-as-a-broader-categorization-of-location-while-the-latter-being-more-descriptive.">The data for location is broken into two categories: Location and Location description, with the first serving as a broader categorization of location, while the latter being more descriptive.</h3>
-<section id="housing-dwelling-synonyms" class="level4">
-<h4 class="anchored" data-anchor-id="housing-dwelling-synonyms">Housing / Dwelling Synonyms</h4>
+<section id="visualization-analysis" class="level1">
+<h1>Visualization Analysis</h1>
+<section id="victim-race-bar-plots" class="level2">
+<h2 class="anchored" data-anchor-id="victim-race-bar-plots">Victim Race Bar Plots</h2>
+<section id="the-first-set-of-bar-plots-show-the-count-of-all-victims-separated-by-race-for-all-boros.-the-zoomed-plot-removes-the-three-most-frequent-races-in-order-to-better-observe-the-less-represented-races." class="level4">
+<h4 class="anchored" data-anchor-id="the-first-set-of-bar-plots-show-the-count-of-all-victims-separated-by-race-for-all-boros.-the-zoomed-plot-removes-the-three-most-frequent-races-in-order-to-better-observe-the-less-represented-races.">The first set of bar plots show the count of all victims, separated by race, for all Boros. The Zoomed plot removes the three most frequent races in order to better observe the less represented races.</h4>
+</section>
+<section id="the-second-plot-shows-the-proportion-of-victim-race-within-each-boro." class="level4">
+<h4 class="anchored" data-anchor-id="the-second-plot-shows-the-proportion-of-victim-race-within-each-boro.">The second plot shows the proportion of victim race within each Boro.</h4>
+</section>
+<section id="victim-frequency-by-boro-and-race" class="level3">
+<h3 class="anchored" data-anchor-id="victim-frequency-by-boro-and-race">Victim frequency by Boro and race</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># in the "Location" column, "Housing" and "Dwelling" are synonyms and they can be combined.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>race <span class="ot">&lt;-</span>  nypd <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(Key, Date, Boro, Vic_race) <span class="sc">|&gt;</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Vic_race_ord =</span> <span class="fu">fct_infreq</span>(Vic_race))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(race, <span class="fu">aes</span>(<span class="at">x =</span> Boro, <span class="at">fill =</span> Vic_race_ord)) <span class="sc">+</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) stringr<span class="sc">::</span><span class="fu">str_wrap</span>(x, <span class="at">width =</span> <span class="dv">12</span>)) <span class="sc">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"right"</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.key.spacing.y =</span> <span class="fu">unit</span>(<span class="fl">0.5</span>, <span class="st">"cm"</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Incidents"</span>, </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">fill =</span> <span class="st">"Victim Race"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NYPD-Shooting-Report_files/figure-html/dodge%20bar-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
-<section id="using-insideoutside-to-determine-location" class="level4">
-<h4 class="anchored" data-anchor-id="using-insideoutside-to-determine-location">Using Inside/Outside to determine Location</h4>
+<section id="victim-frequency-by-boro-and-race-zoomed" class="level3">
+<h3 class="anchored" data-anchor-id="victim-frequency-by-boro-and-race-zoomed">Victim frequency by Boro and race (Zoomed)</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># more than half of the incidents occured in some sort of housing according to the Location desctiption column. However, that ratio is not respresented in the Location column. We can use the Inside/Outside column is the Location is NA to determine whether an incident occured in the "Housing" Location or the "Street" location</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>inside_street <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">distinct</span>(Inside_outside, Location)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>race <span class="sc">|&gt;</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span>Vic_race_ord <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"BLACK"</span>, <span class="st">"WHITE HISPANIC"</span>, <span class="st">"BLACK HISPANIC"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> Boro, <span class="at">fill =</span> Vic_race_ord)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">scale_fill_discrete</span>(<span class="at">drop =</span> <span class="cn">FALSE</span>, <span class="at">labels =</span> <span class="cf">function</span>(x) stringr<span class="sc">::</span><span class="fu">str_wrap</span>(x,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">width =</span> <span class="dv">12</span>)) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"right"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.key.spacing.y =</span> <span class="fu">unit</span>(<span class="fl">0.5</span>, <span class="st">"cm"</span>),</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Incidents"</span>, </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">fill =</span> <span class="st">"Victim Race"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NYPD-Shooting-Report_files/figure-html/dodge%20bar%20zoomed-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
 </div>
+</div>
+</div>
+</section>
+<section id="proportion-of-victim-race-within-each-boro" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-victim-race-within-each-boro">Proportion of victim race within each Boro</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(race, <span class="fu">aes</span>(<span class="at">x =</span> Boro, <span class="at">fill =</span> Vic_race_ord)) <span class="sc">+</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) stringr<span class="sc">::</span><span class="fu">str_wrap</span>(x, <span class="at">width =</span> <span class="dv">12</span>)) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"right"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.key.spacing.y =</span> <span class="fu">unit</span>(<span class="fl">0.5</span>, <span class="st">"cm"</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Victim race proportion within each Boro"</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Proportion"</span>, </span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">fill =</span> <span class="st">"Victim Race"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NYPD-Shooting-Report_files/figure-html/victim%20proportion-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="day-of-week-vs.-time-incident-frequency-heat-map" class="level2">
+<h2 class="anchored" data-anchor-id="day-of-week-vs.-time-incident-frequency-heat-map">Day of Week vs.&nbsp;Time Incident Frequency Heat Map</h2>
+<section id="the-heat-map-will-show-the-frquency-of-the-incidents-based-off-the-time-it-occured-and-the-day-of-the-week.-the-key-variable-is-needed-to-ensure-each-incident-only-gets-counted-once-since-some-keys-are-listed-more-than-once-if-there-were-multiple-victims" class="level4">
+<h4 class="anchored" data-anchor-id="the-heat-map-will-show-the-frquency-of-the-incidents-based-off-the-time-it-occured-and-the-day-of-the-week.-the-key-variable-is-needed-to-ensure-each-incident-only-gets-counted-once-since-some-keys-are-listed-more-than-once-if-there-were-multiple-victims">The heat map will show the frquency of the incidents based off the time it occured and the day of the week. The ‘Key’ variable is needed to ensure each incident only gets counted once, since some Keys are listed more than once if there were multiple victims</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># creating a new df 'dow_heat' with the Key, Date, and Time.</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># added a new column that contains the day of the week</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>dow_heat <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(Key, Date, Time) <span class="sc">|&gt;</span> </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># using the weekdays function to find the day of the week</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">Weekday =</span> <span class="fu">weekdays</span>(Date),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># days of the week are ordered as such for visual clarity in the heat map</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">Weekday =</span> <span class="fu">factor</span>(Weekday, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Monday"</span>, <span class="st">"Tuesday"</span>, <span class="st">"Wednesday"</span>, <span class="st">"Thursday"</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                                             <span class="st">"Friday"</span>, <span class="st">"Saturday"</span>, <span class="st">"Sunday"</span>)),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># extracting just the hour of each incident</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">Hour =</span> <span class="fu">hour</span>(Time),</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># counting each incident as once occurence instead of how many victims there were</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">distinct</span>(Key, Weekday, Hour, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(Weekday, Hour, <span class="at">name =</span> <span class="st">"Incidents"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using geom_tile to create heat map of day of week vs time of shooting</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(dow_heat, <span class="fu">aes</span>(<span class="at">x =</span> Hour, <span class="at">y =</span> <span class="fu">fct_rev</span>(Weekday), <span class="at">fill =</span> Incidents)) <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_tile</span>(<span class="at">color =</span> <span class="st">"white"</span>, <span class="at">lwd =</span> <span class="fl">0.1</span>, <span class="at">linetype =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> Incidents), <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span>            </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">12</span>, <span class="dv">16</span>, <span class="dv">20</span>),</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_y_discrete</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_fixed</span>(<span class="at">ratio =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">title =</span> <span class="st">"Day of Week vs. Time Incident Frequency Heat Map"</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">vjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>          <span class="co">#axis.text.x = element_text(size = 12),</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.background =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.background =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">18</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NYPD-Shooting-Report_files/figure-html/heat%20map-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="model-analysis" class="level1">
+<h1>Model Analysis</h1>
+<section id="incident-interval-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="incident-interval-distribution">Incident Interval Distribution</h2>
+<section id="below-ive-calculated-and-plotted-the-time-interval-between-each-incident-to-determine-what-distribution-if-any-this-metric-most-closely-follows." class="level4">
+<h4 class="anchored" data-anchor-id="below-ive-calculated-and-plotted-the-time-interval-between-each-incident-to-determine-what-distribution-if-any-this-metric-most-closely-follows.">Below I’ve calculated and plotted the time interval between each incident to determine what distribution (if any) this metric most closely follows.</h4>
+</section>
+<section id="incident-interval-calculation" class="level3">
+<h3 class="anchored" data-anchor-id="incident-interval-calculation">Incident Interval Calculation</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>intervals <span class="ot">&lt;-</span> nypd <span class="sc">|&gt;</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(Key, Date, Time) <span class="sc">|&gt;</span> </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">date_time =</span> <span class="fu">ymd_hms</span>(<span class="fu">paste</span>(Date, Time))) <span class="sc">|&gt;</span>  </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">distinct</span>(Key, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(date_time) <span class="sc">|&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">interval_hours =</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(date_time, <span class="fu">lag</span>(date_time), <span class="at">units =</span> <span class="st">"hours"</span>))) <span class="sc">|&gt;</span> </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(interval_hours)) <span class="sc">|&gt;</span> </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># calculating the mean and lambda interval</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>mean_int <span class="ot">&lt;-</span> <span class="fu">mean</span>(intervals<span class="sc">$</span>interval_hours)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>lambda_int <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> mean_int</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="incident-interval-model-and-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="incident-interval-model-and-analysis">Incident Interval Model and Analysis</h3>
+<section id="the-intverals-follow-a-poissonexponential-distribution.-the-histogram-is-plotted-using-density-rather-than-raw-count-to-ensure-the-y-axis-scale-will-be-the-same-between-the-histogram-and-the-density-curve.-the-vertical-line-shows-the-calculated-interval-mean-approximately-7.1-hours." class="level4">
+<h4 class="anchored" data-anchor-id="the-intverals-follow-a-poissonexponential-distribution.-the-histogram-is-plotted-using-density-rather-than-raw-count-to-ensure-the-y-axis-scale-will-be-the-same-between-the-histogram-and-the-density-curve.-the-vertical-line-shows-the-calculated-interval-mean-approximately-7.1-hours.">The intverals follow a Poisson/Exponential distribution. The histogram is plotted using density rather than raw count to ensure the y-axis scale will be the same between the histogram and the density curve. The vertical line shows the calculated interval mean, approximately 7.1 hours.</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(intervals, <span class="fu">aes</span>(<span class="at">x =</span> interval_hours)) <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># using the proportion density rather than actual count to overlay exponential distribution curve</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">after_stat</span>(density)),</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">binwidth =</span> <span class="dv">1</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">fill =</span> <span class="st">"#F8766D"</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># exponential curve</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_function</span>(<span class="at">fun =</span> dexp,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">args =</span> <span class="fu">list</span>(<span class="at">rate =</span> lambda_int),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">color =</span> <span class="st">"#00BFC4"</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># vertical line showing the calculate mean</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> mean_int,</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>               <span class="at">linetype =</span> <span class="st">"dashed"</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>               <span class="at">color =</span> <span class="st">"#00BA38"</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>               <span class="at">linewidth =</span> <span class="fl">1.1</span>) <span class="sc">+</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shooting Interval Density"</span>,</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">subtitle =</span> <span class="st">"Plot truncated to 48 hours for visual clarity"</span>,</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Incident Interval in Hours"</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Density"</span>) <span class="sc">+</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">18</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>          <span class="at">panel.background =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>          <span class="at">plot.background =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># adjusting the shown x-axis for clarity</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">48</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NYPD-Shooting-Report_files/figure-html/histogram%20plot-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+</section>
+<section id="potential-bias" class="level1">
+<h1>Potential Bias</h1>
+<section id="reporting" class="level3">
+<h3 class="anchored" data-anchor-id="reporting">Reporting</h3>
+<section id="this-dataset-only-records-incidents-where-someone-was-actually-wounded-or-killed.-it-does-not-include-incidents-where-people-were-shot-at-and-not-wounded.-it-may-seem-obvious-when-said-aloud-but-this-data-doesnt-include-incidents-that-werent-reported.-there-may-have-been-incidents-where-someone-was-wounded-but-the-police-werent-called." class="level4">
+<h4 class="anchored" data-anchor-id="this-dataset-only-records-incidents-where-someone-was-actually-wounded-or-killed.-it-does-not-include-incidents-where-people-were-shot-at-and-not-wounded.-it-may-seem-obvious-when-said-aloud-but-this-data-doesnt-include-incidents-that-werent-reported.-there-may-have-been-incidents-where-someone-was-wounded-but-the-police-werent-called.">This dataset only records incidents where someone was actually wounded or killed. It does not include incidents where people were shot at and not wounded. It may seem obvious when said aloud, but this data doesn’t include incidents that weren’t reported. There may have been incidents where someone was wounded but the police weren’t called.</h4>
+</section>
+</section>
+<section id="racial" class="level3">
+<h3 class="anchored" data-anchor-id="racial">Racial</h3>
+<section id="new-york-is-one-of-the-most-diverse-cities-in-the-world.-from-a-data-standpoint-it-may-make-sense-to-group-a-victims-race-into-a-nice-and-neat-category-but-there-may-be-victims-who-would-potentially-not-identify-with-any-of-the-given-demographics-but-were-lumped-into-the-closest-fitting-choice." class="level4">
+<h4 class="anchored" data-anchor-id="new-york-is-one-of-the-most-diverse-cities-in-the-world.-from-a-data-standpoint-it-may-make-sense-to-group-a-victims-race-into-a-nice-and-neat-category-but-there-may-be-victims-who-would-potentially-not-identify-with-any-of-the-given-demographics-but-were-lumped-into-the-closest-fitting-choice.">New York is one of the most diverse cities in the world. From a data standpoint, it may make sense to group a victim’s race into a nice and neat category, but there may be victims who would potentially not identify with any of the given demographics, but were lumped into the closest fitting choice.</h4>
 </section>
 </section>
 </section>

@@ -4,23 +4,21 @@ author: "W. Jencyowski"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(naniar)
-library(ggsankey)
-# here is a test change for the markdown file
 ```
 
-## Data Import
-```{r data import}
+# Data Import
+```{r data import, cache = TRUE}
 # NYPD Shooting Incident Data (Historic) from www.catalog.data.gov
 nypd_url <- "https://data.cityofnewyork.us/api/v3/views/833y-fsy8/export.csv?accessType=DOWNLOAD"
 nypd_raw <- read_csv(nypd_url)
 ```
 
-## Renaming
-### Renaming each column for clarity and ease of reading
+# Tidying
+### Renaming columns for clarity
 ```{r renaming}
 nypd <- nypd_raw |> 
     rename(
@@ -28,102 +26,187 @@ nypd <- nypd_raw |>
         Date = OCCUR_DATE,
         Time = OCCUR_TIME,
         Boro = BORO,
-        Precinct = PRECINCT,
-        Location = LOC_CLASSFCTN_DESC,
-        Location_description = LOCATION_DESC,
-        Murder = STATISTICAL_MURDER_FLAG,
-        Perp_age = PERP_AGE_GROUP,
-        Perp_sex = PERP_SEX,
-        Perp_race = PERP_RACE,
-        Vic_age = VIC_AGE_GROUP,
         Vic_race = VIC_RACE,
-        Vic_sex = VIC_SEX,
         )
 ```
 
-## Refactoring
-### Refactoring column type based off the dataset footnotes 
+### Refactoring using the dataset footnotes 
 ```{r refactoring}
 nypd$Key <- as.integer(nypd$Key)
 nypd$Date <- as.Date(nypd$Date, "%m/%d/%Y")
-# OCCUR_TIME is already is already hr/min/sec
+# TIME is already factored as hr/min/sec
 nypd$Boro <- as.factor(nypd$Boro)
-nypd$Precinct <- as.integer(nypd$Precinct)
-nypd$Location <- as.factor(nypd$Location)
-nypd$Location_description <- as.factor(nypd$Location_description)
 ```
 
-## Cleaning perp and victim demographics
-### This next section cleans the age, sex, and race columns using the naniar library, specifically the `replace_with_na` function.
+### Cleaning victim demographics
+##### This next section cleans the race columns using the naniar library, specifically the `replace_with_na` function.
 
-#### Finding perp demo outliers
-```{r perp demo outliers}
-# Using the `unique()` command  to find each demegraphic that doesn't fit into the established convention
-unique(nypd$Perp_age)
-unique(nypd$Perp_sex)
-unique(nypd$Perp_race)
-```
-
-#### Replacing perp demo outlier values with NA
-```{r clean perp demo}
-# entries in each column that don't match convention. Unknowns are changed to NA for uniformity across the data set
-perp_age_filter <- c("(null)", "2021", "1028", "UNKNOWN", "1020", "940", "224")
-perp_sex_filter <- c("(null)", "U")
-perp_race_filter <- c("(null)", "UNKNOWN")
-
-# replacing those values with NA
-nypd <- nypd |> 
-    replace_with_na(replace = list(Perp_age = perp_age_filter,
-                                   Perp_sex = perp_sex_filter,
-                                   Perp_race = perp_race_filter)) 
-```
-
-#### Finding vic demo outliers
+#### Finding Victim race outliers
 ```{r vic demo outliers}
-# the same process as above is done for the victims
-unique(nypd$Vic_age)
-unique(nypd$Vic_sex)
 unique(nypd$Vic_race)
 ```
 
-#### Replacing vic demo outlier values with NA
+#### Replacing Victim race outlier values with NA
 ```{r clean vic demo}
-# creating a list of strings from each column that doesn't match convention
+# creating a string for races that don't match convention
 # unknowns are changed to NA for uniformity across the data set
-vic_age_filter <- c("UNKNOWN", "1022")
-vic_sex_filter <- c("U")
 vic_race_filter <- c("UNKNOWN")
 
-# replacing those values with NA
+# replacing those "UNKNOWN"s with NA
 nypd <- nypd |> 
-    replace_with_na(replace = list(Vic_age = vic_age_filter,
-                                   Vic_sex = vic_sex_filter,
-                                   Vic_race = vic_race_filter)) 
+    replace_with_na(replace = list(Vic_race = vic_race_filter)) 
 ```
 
-#### Mutating age demos to ordered factors
-```{r}
-nypd <- nypd |> 
-    mutate(Perp_age = factor(Perp_age, levels = c("<18", "18-24", "25-44", "45-64", "65+")),
-          Vic_age = factor(Vic_age, levels = c("<18", "18-24", "25-44", "45-64", "65+"))
-    )
-```
+# Visualization Analysis
 
+## Victim Race Bar Plots
+#### The first set of bar plots show the count of all victims, separated by race, for all Boros. The Zoomed plot removes the three most frequent races in order to better observe the less represented races.
+#### The second plot shows the proportion of victim race within each Boro.
+
+### Victim frequency by Boro and race
 
 ```{r}
 race <-  nypd |>
-    select(Key, Date, Boro, Perp_race, Vic_race) |> 
+    select(Key, Date, Boro, Vic_race) |> 
     mutate(Vic_race_ord = fct_infreq(Vic_race))
 ```
 
-## Vic Race stacked bar plot
-```{r stacked bar plot}
+```{r dodge bar, out.width = "100%"}
 ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
-    geom_bar(position = "dodge")
+    geom_bar(position = "dodge") +
+    scale_fill_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+    theme(legend.position = "right",
+          legend.key.spacing.y = unit(0.5, "cm"),
+          plot.title = element_text(hjust = 0.5)) +
+    labs(y = "Incidents", 
+         fill = "Victim Race")
+```
+
+### Victim frequency by Boro and race (Zoomed)
+
+```{r dodge bar zoomed, out.width = "100%"}
+race |> 
+    filter(!Vic_race_ord %in% c("BLACK", "WHITE HISPANIC", "BLACK HISPANIC")) |> 
+    ggplot(aes(x = Boro, fill = Vic_race_ord)) +
+        geom_bar(position = "dodge") +
+        scale_fill_discrete(drop = FALSE, labels = function(x) stringr::str_wrap(x,
+            width = 12)) +
+        theme(legend.position = "right",
+            legend.key.spacing.y = unit(0.5, "cm"),
+            plot.title = element_text(hjust = 0.5)) +
+        labs(y = "Incidents", 
+            fill = "Victim Race")
 ```
 
 
-```{r basic line plot}
-ggplot(race, aes(x = Date, y = Total)) +
-    geom_line()
+### Proportion of victim race within each Boro
+```{r victim proportion, out.width = "100%"}
+ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
+    geom_bar(position = "fill") +
+    scale_fill_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+    theme(legend.position = "right",
+          legend.key.spacing.y = unit(0.5, "cm"),
+          plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Victim race proportion within each Boro",
+         y = "Proportion", 
+         fill = "Victim Race")
+    
 ```
+
+## Day of Week vs. Time Incident Frequency Heat Map
+#### The heat map will show the frquency of the incidents based off the time it occured and the day of the week. The 'Key' variable is needed to ensure each incident only gets counted once, since some Keys are listed more than once if there were multiple victims
+```{r time v day of week}
+# creating a new df 'dow_heat' with the Key, Date, and Time.
+# added a new column that contains the day of the week
+dow_heat <- nypd |> 
+    select(Key, Date, Time) |> 
+    mutate(
+        # using the weekdays function to find the day of the week
+        Weekday = weekdays(Date),
+        # days of the week are ordered as such for visual clarity in the heat map
+        Weekday = factor(Weekday, levels = c("Monday", "Tuesday", "Wednesday", "Thursday",
+                                             "Friday", "Saturday", "Sunday")),
+        # extracting just the hour of each incident
+        Hour = hour(Time),
+    ) |>
+    # counting each incident as once occurence instead of how many victims there were
+    distinct(Key, Weekday, Hour, .keep_all = TRUE) |>
+    count(Weekday, Hour, name = "Incidents")
+```
+
+```{r heat map, out.width = "100%"}
+# using geom_tile to create heat map of day of week vs time of shooting
+ggplot(dow_heat, aes(x = Hour, y = fct_rev(Weekday), fill = Incidents)) +
+    geom_tile(color = "white", lwd = 0.1, linetype = 1) +
+    geom_text(aes(label = Incidents), color = "white", size = 3) +            
+    scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20),
+                     expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0,0)) +
+    coord_fixed(ratio = 1) +
+    labs(y = NULL, title = "Day of Week vs. Time Incident Frequency Heat Map") +
+    theme(axis.text.y = element_text(vjust = 0.5),
+          #axis.text.x = element_text(size = 12),
+          panel.background = element_blank(),
+          plot.background = element_blank(),
+          plot.title = element_text(size = 18, hjust = 0.5),
+          legend.position = "none")
+```
+
+
+
+# Model Analysis
+## Incident Interval Distribution
+#### Below I've calculated and plotted the time interval between each incident to determine what distribution (if any) this metric most closely follows.
+
+### Incident Interval Calculation
+```{r Incident Intervals}
+intervals <- nypd |> 
+    select(Key, Date, Time) |> 
+    mutate(date_time = ymd_hms(paste(Date, Time))) |>  
+    distinct(Key, .keep_all = TRUE) |> 
+    arrange(date_time) |>
+    mutate(interval_hours = as.numeric(difftime(date_time, lag(date_time), units = "hours"))) |> 
+    filter(!is.na(interval_hours)) |> 
+    ungroup()
+
+# calculating the mean and lambda interval
+mean_int <- mean(intervals$interval_hours)
+lambda_int <- 1 / mean_int
+```
+
+### Incident Interval Model and Analysis
+#### The intverals follow a Poisson/Exponential distribution. The histogram is plotted using density rather than raw count to ensure the y-axis scale will be the same between the histogram and the density curve. The vertical line shows the calculated interval mean, approximately 7.1 hours.
+```{r histogram plot, out.width = "100%"}
+ggplot(intervals, aes(x = interval_hours)) +
+    # using the proportion density rather than actual count to overlay exponential distribution curve
+    geom_histogram(aes(y = after_stat(density)),
+                       binwidth = 1,
+                       fill = "#F8766D",
+                       color = "white") +
+    # exponential curve
+    stat_function(fun = dexp,
+                  args = list(rate = lambda_int),
+                  color = "#00BFC4",
+                  linewidth = 1) +
+    # vertical line showing the calculate mean
+    geom_vline(xintercept = mean_int,
+               linetype = "dashed",
+               color = "#00BA38",
+               linewidth = 1.1) +
+    labs(title = "Shooting Interval Density",
+         subtitle = "Plot truncated to 48 hours for visual clarity",
+         x = "Incident Interval in Hours",
+         y = "Density") +
+    theme(plot.title = element_text(size = 18, hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5),
+          panel.background = element_blank(),
+          plot.background = element_blank()) +
+    # adjusting the shown x-axis for clarity
+    coord_cartesian(xlim = c(0, 48))
+```
+
+# Potential Bias
+### Reporting
+#### This dataset only records incidents where someone was actually wounded or killed. It does not include incidents where people were shot at and not wounded. It may seem obvious when said aloud, but this data doesn't include incidents that weren't reported. There may have been incidents where someone was wounded but the police weren't called.
+### Racial
+#### New York is one of the most diverse cities in the world. From a data standpoint, it may make sense to group a victim's race into a nice and neat category, but there may be victims who would potentially not identify with any of the given demographics, but were lumped into the closest fitting choice.

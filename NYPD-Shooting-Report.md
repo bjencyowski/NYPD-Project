@@ -11,7 +11,7 @@ nypd_raw <- read_csv(nypd_url)
 ```
 
     ## Rows: 29744 Columns: 21
-    ## ── Column specification ────────────────────────────────────────────────────────
+    ## ── Column specification ────────────────────────────────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr  (12): OCCUR_DATE, BORO, LOC_OF_OCCUR_DESC, LOC_CLASSFCTN_DESC, LOCATION...
     ## dbl   (5): INCIDENT_KEY, PRECINCT, JURISDICTION_CODE, Latitude, Longitude
@@ -22,9 +22,9 @@ nypd_raw <- read_csv(nypd_url)
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-## Renaming
+## Tidying
 
-### Renaming each column for clarity and ease of reading
+### Renaming cloumns for clarity
 
 ``` r
 nypd <- nypd_raw |> 
@@ -33,9 +33,7 @@ nypd <- nypd_raw |>
         Date = OCCUR_DATE,
         Time = OCCUR_TIME,
         Boro = BORO,
-        Inside_outside = LOC_OF_OCCUR_DESC,
         Precinct = PRECINCT,
-        Jurisdiction = JURISDICTION_CODE,
         Location = LOC_CLASSFCTN_DESC,
         Location_description = LOCATION_DESC,
         Murder = STATISTICAL_MURDER_FLAG,
@@ -48,33 +46,30 @@ nypd <- nypd_raw |>
         )
 ```
 
-## Refactoring
-
-### Refactoring column type based off the dataset footnotes
+### Refactoring using the dataset footnotes
 
 ``` r
 nypd$Key <- as.integer(nypd$Key)
 nypd$Date <- as.Date(nypd$Date, "%m/%d/%Y")
 # OCCUR_TIME is already is already hr/min/sec
 nypd$Boro <- as.factor(nypd$Boro)
-nypd$Inside_outside <- as.factor(nypd$Inside_outside)
 nypd$Precinct <- as.integer(nypd$Precinct)
-nypd$Jurisdiction <- as.integer(nypd$Jurisdiction)
 nypd$Location <- as.factor(nypd$Location)
+nypd$Location_description <- as.factor(nypd$Location_description)
 ```
 
-## Cleaning perp and victim demographics
+### Cleaning perp and victim demographics
 
-### This next section cleans the age, sex, and race columns using the naniar library, specifically the `replace_with_na` function.
+##### This next section cleans the age, sex, and race columns using the naniar library, specifically the `replace_with_na` function.
 
-#### Finding perp demo outliers
+#### Finding Perp demographic outliers
 
 ``` r
 # Using the `unique()` command  to find each demegraphic that doesn't fit into the established convention
 unique(nypd$Perp_age)
 ```
 
-    ##  [1] "25-44"   "(null)"  "45-64"   "18-24"   "<18"     "65+"     "2021"   
+    ##  [1] "25-44"   "45-64"   "(null)"  "18-24"   "<18"     "65+"     "2021"   
     ##  [8] "1028"    NA        "UNKNOWN" "1020"    "940"     "224"
 
 ``` r
@@ -93,7 +88,7 @@ unique(nypd$Perp_race)
     ## [7] "WHITE"                          NA                              
     ## [9] "AMERICAN INDIAN/ALASKAN NATIVE"
 
-#### Replacing outlier values with NA
+#### Replacing Perp demographic outlier values with NA
 
 ``` r
 # entries in each column that don't match convention. Unknowns are changed to NA for uniformity across the data set
@@ -108,14 +103,14 @@ nypd <- nypd |>
                                    Perp_race = perp_race_filter)) 
 ```
 
-#### Finding vic demo outliers
+#### Finding Victim demographic outliers
 
 ``` r
 # the same process as above is done for the victims
 unique(nypd$Vic_age)
 ```
 
-    ## [1] "25-44"   "18-24"   "<18"     "45-64"   "65+"     "UNKNOWN" "1022"
+    ## [1] "18-24"   "25-44"   "45-64"   "<18"     "65+"     "UNKNOWN" "1022"
 
 ``` r
 unique(nypd$Vic_sex)
@@ -127,12 +122,12 @@ unique(nypd$Vic_sex)
 unique(nypd$Vic_race)
 ```
 
-    ## [1] "BLACK"                          "WHITE HISPANIC"                
-    ## [3] "WHITE"                          "BLACK HISPANIC"                
+    ## [1] "BLACK"                          "WHITE"                         
+    ## [3] "WHITE HISPANIC"                 "BLACK HISPANIC"                
     ## [5] "ASIAN / PACIFIC ISLANDER"       "UNKNOWN"                       
     ## [7] "AMERICAN INDIAN/ALASKAN NATIVE"
 
-#### Replacing vic demo outlier values with NA
+#### Replacing Victim demographic outlier values with NA
 
 ``` r
 # creating a list of strings from each column that doesn't match convention
@@ -147,3 +142,95 @@ nypd <- nypd |>
                                    Vic_sex = vic_sex_filter,
                                    Vic_race = vic_race_filter)) 
 ```
+
+#### Mutating age demographics to ordered factors
+
+``` r
+nypd <- nypd |> 
+    mutate(Perp_age = factor(Perp_age, levels = c("<18", "18-24", "25-44", "45-64", "65+")),
+          Vic_age = factor(Vic_age, levels = c("<18", "18-24", "25-44", "45-64", "65+"))
+    )
+```
+
+``` r
+race <-  nypd |>
+    select(Key, Date, Boro, Perp_race, Vic_race) |> 
+    mutate(Vic_race_ord = fct_infreq(Vic_race))
+```
+
+## Victim Race Bar Plots
+
+#### The two bar plots compare each Boro and the differences in a victim’s race. The first plot shows the count of all victims, separated by race, for all Boros. The second plot shows the proportion of victim race within each Boro.
+
+### Victim frequency by Boro and race
+
+``` r
+ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
+    geom_bar(position = "dodge") +
+    scale_fill_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+    theme(legend.position = "right",
+          legend.key.spacing.y = unit(0.5, "cm"),
+          plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Victim race frequency within each Boro",
+         y = "Incidents", 
+         fill = "Victim Race")
+```
+
+\![\](NYPD-Shooting-Report_files/figure-gfm/stacked bar plot, fig-align:
+“center”-1.png)<!-- -->
+
+### Proportion of victim race within each Boro
+
+``` r
+ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
+    geom_bar(position = "fill") +
+    scale_fill_discrete(labels = function(x) stringr::str_wrap(x, width = 12)) +
+    theme(legend.position = "right",
+          legend.key.spacing.y = unit(0.5, "cm"),
+          plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Victim race proportion within each Boro",
+         y = "Proportion", 
+         fill = "Victim Race")
+```
+
+\![\](NYPD-Shooting-Report_files/figure-gfm/filled bar plot, fig-align:
+“center”-1.png)<!-- -->
+
+## Day of Week vs. Time Incident Frequency Heat Map
+
+``` r
+# need to add a new column that contains the day of the week
+# creating a new df to work with. selecting the Key and Date. The heat map will compares incidents time of occurence vs the day of the week. The key is needed to ensure each incident only gets counted once and not twice or more if there were two or more victims
+dow_heat <- nypd |> 
+    select(Key, Date, Time) |> 
+    mutate(
+        Weekday = weekdays(Date),
+        Weekday = factor(Weekday, levels = c("Monday", "Tuesday", "Wednesday", "Thursday",
+                                             "Friday", "Saturday", "Sunday")),
+        Hour = hour(Time),
+    ) |>
+    
+    # counting each incident as once occurence instead of how many victims there were
+    distinct(Key, Weekday, Hour, .keep_all = TRUE) |>
+    count(Weekday, Hour, name = "Incidents")
+```
+
+``` r
+# using geom tile to create heat map of day of week vs time of shooting
+ggplot(dow_heat, aes(x = Hour, y = fct_rev(Weekday), fill = Incidents)) +
+    geom_tile(color = "white", lwd = 0.1, linetype = 1) +
+    geom_text(aes(label = Incidents), color = "white", size = 3) +            
+    scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20),
+                     expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0,0)) +
+    coord_fixed(ratio = 1) +
+    labs(y = NULL, title = "Day of Week vs. Time Incident Frequency Heat Map") +
+    theme(axis.text.y = element_text(vjust = 0.5),
+          #axis.text.x = element_text(size = 12),
+          panel.background = element_blank(),
+          plot.background = element_blank(),
+          plot.title = element_text(size = 12, hjust = 0.5),
+          legend.position = "none")
+```
+
+<img src="NYPD-Shooting-Report_files/figure-gfm/unnamed-chunk-3-1.png" alt="" width="100%" />
