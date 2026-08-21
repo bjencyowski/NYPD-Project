@@ -1,10 +1,15 @@
 ---
 title: "NYPD Shooting Incident Data Project"
 author: "W. Jencyowski"
-output: github_document
+output:
+    html_document:
+        toc: true
+        toc_float: true
+        theme: flatly
+        highlight: tango
 ---
 
-```{r setup, include = FALSE}
+```{r setup, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(naniar)
@@ -57,7 +62,7 @@ nypd <- nypd |>
     replace_with_na(replace = list(Vic_race = vic_race_filter)) 
 ```
 
-# Visualization Analysis
+# Visualizations
 
 ## Victim Race Bar Plots
 #### The first set of bar plots show the count of all victims, separated by race, for all Boros. The Zoomed plot removes the three most frequent races in order to better observe the less represented races.
@@ -113,6 +118,9 @@ ggplot(race, aes(x = Boro, fill = Vic_race_ord)) +
     
 ```
 
+### Victim Race Analysis
+#### This data shows that across each borrow, the proportion of victim race is roughly the same across the boros, however, Brooklyn is by and far the boro with the most shooting incident. 
+
 ## Day of Week vs. Time Incident Frequency Heat Map
 #### The heat map will show the frquency of the incidents based off the time it occured and the day of the week. The 'Key' variable is needed to ensure each incident only gets counted once, since some Keys are listed more than once if there were multiple victims
 ```{r time v day of week}
@@ -152,11 +160,11 @@ ggplot(dow_heat, aes(x = Hour, y = fct_rev(Weekday), fill = Incidents)) +
           legend.position = "none")
 ```
 
+### Heat Map Analysis
+####  The data shows incidents most frequently occur during Friday and Saturday nights and into the morning, steeply falling off around 5 a.m. The incidents have a sharp decline in frquency during the weekday morning commute hours, Monday-Friday between 6 and 9 a.m.
 
 
-# Model Analysis
-## Incident Interval Distribution
-#### Below I've calculated and plotted the time interval between each incident to determine what distribution (if any) this metric most closely follows.
+# Modelled Data
 
 ### Incident Interval Calculation
 ```{r Incident Intervals}
@@ -174,39 +182,48 @@ mean_int <- mean(intervals$interval_hours)
 lambda_int <- 1 / mean_int
 ```
 
-### Incident Interval Model and Analysis
-#### The intverals follow a Poisson/Exponential distribution. The histogram is plotted using density rather than raw count to ensure the y-axis scale will be the same between the histogram and the density curve. The vertical line shows the calculated interval mean, approximately 7.1 hours.
+### Incident Interval Model
+#### The histogram is plotted using density rather than raw count to ensure the y-axis scale will be the same between the histogram and the density curve.
 ```{r histogram plot, out.width = "100%"}
 ggplot(intervals, aes(x = interval_hours)) +
     # using the proportion density rather than actual count to overlay exponential distribution curve
-    geom_histogram(aes(y = after_stat(density)),
+geom_histogram(aes(y = after_stat(density)),
                        binwidth = 1,
                        fill = "#F8766D",
                        color = "white") +
-    # exponential curve
-    stat_function(fun = dexp,
+                           # exponential curve
+                        stat_function(fun = dexp,
                   args = list(rate = lambda_int),
                   color = "#00BFC4",
                   linewidth = 1) +
-    # vertical line showing the calculate mean
-    geom_vline(xintercept = mean_int,
+                      # vertical line showing the calculate mean
+                    geom_vline(xintercept = mean_int,
                linetype = "dashed",
                color = "#00BA38",
                linewidth = 1.1) +
-    labs(title = "Shooting Interval Density",
-         subtitle = "Plot truncated to 48 hours for visual clarity",
+                   labs(title = "Shooting Interval Density",
+                subtitle = "Plot truncated to 48 hours for visual clarity",
          x = "Incident Interval in Hours",
          y = "Density") +
-    theme(plot.title = element_text(size = 18, hjust = 0.5),
-          plot.subtitle = element_text(hjust = 0.5),
+             theme(plot.title = element_text(size = 18, hjust = 0.5),
+            plot.subtitle = element_text(hjust = 0.5),
           panel.background = element_blank(),
           plot.background = element_blank()) +
-    # adjusting the shown x-axis for clarity
-    coord_cartesian(xlim = c(0, 48))
+              # adjusting the shown x-axis for clarity
+            coord_cartesian(xlim = c(0, 48))
 ```
 
-# Potential Bias
+## Incident Interval Distribution Analysis
+#### The intervals between incidents follows a Poisson/Exponential distribution. The vertical line represents the calculated interval mean, approximately 7.1 hours between each shooting incident
+
+# Potential Bias in Data and Analysis
 ### Reporting
 #### This dataset only records incidents where someone was actually wounded or killed. It does not include incidents where people were shot at and not wounded. It may seem obvious when said aloud, but this data doesn't include incidents that weren't reported. There may have been incidents where someone was wounded but the police weren't called.
+
 ### Racial
 #### New York is one of the most diverse cities in the world. From a data standpoint, it may make sense to group a victim's race into a nice and neat category, but there may be victims who would potentially not identify with any of the given demographics, but were lumped into the closest fitting choice.
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
